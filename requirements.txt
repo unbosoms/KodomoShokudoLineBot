@@ -1,5 +1,5 @@
 opencv-python
 pillow
-dotenv
+python-dotenv
 flask
 line-bot-sdk
