@@ -1,0 +1,5 @@
+opencv-python
+pillow
+dotenv
+flask
+line-bot-sdk
