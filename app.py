@@ -26,8 +26,8 @@ import random
 
 load_dotenv()
 
-CHANNEL_ACCESS_TOKEN=os.environ["CHANNEL_ACCESS_TOKEN"]
-CHANNEL_SECRET=os.environ["CHANNEL_SECRET"]
+CHANNEL_ACCESS_TOKEN=os.environ.get("CHANNEL_ACCESS_TOKEN")
+CHANNEL_SECRET=os.environ.get("CHANNEL_SECRET")
 
 app = Flask(__name__)
 
