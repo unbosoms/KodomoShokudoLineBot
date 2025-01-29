@@ -139,9 +139,11 @@ def count_stickers(image):
 
     result_str = ''
     for quadrant_name, counts in results.items():
-        result_str += f"{quadrant_name}:\n"
+        count_sum = 0
         for color, count in counts.items():
-            result_str += f"  {color.capitalize()}: {'●'*count}\n"
+            count_sum += count
+        result_str += f"{quadrant_name}: {count}\n"
+        result_str += f"{'●'*count}\n"
 
     return result_str
 
