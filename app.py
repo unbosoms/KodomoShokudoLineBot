@@ -72,7 +72,7 @@ def handle_image(event):
 
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text='今日もお疲れ様でした♪\n\n＜本日の結果＞\n'+result)
+        TextSendMessage(text='今日もお疲れ様でした♪\n集計結果はこちら！\n'+result)
         )
 
 def count_stickers(image):
@@ -142,7 +142,7 @@ def count_stickers(image):
         count_sum = 0
         for color, count in counts.items():
             count_sum += count
-        result_str += f"{quadrant_name}: {count_sum}\n"
+        result_str += f"\n{quadrant_name}: {count_sum}\n"
         result_str += f"{'●'*count_sum}\n"
 
     return result_str
