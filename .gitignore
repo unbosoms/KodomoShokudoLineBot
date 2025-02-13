@@ -1,3 +1,5 @@
+.gitignore
 .env
 jupyter
 make_keys
+credentials.json
