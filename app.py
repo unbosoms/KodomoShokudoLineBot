@@ -106,6 +106,7 @@ def count_stickers(image, user_id):
 
     # GoogleDrive保存用のファイルを一時的に保存 
     now = datetime.datetime.now()
+    now = now + datetime.timedelta(hours=9)
     time_str = now.strftime("%Y%m%d_%H%M%S")
     random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     tmp_img_filename = './' + user_id + '_' + time_str + '_' + random_str + '.jpg'
