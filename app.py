@@ -108,7 +108,7 @@ def count_stickers(image, user_id):
     now = datetime.datetime.now()
     time_str = now.strftime("%Y%m%d_%H%M%S")
     random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    tmp_img_filename = './' + time_str + '_' + user_id + '_' + random_str + '.jpg'
+    tmp_img_filename = './' + user_id + '_' + time_str + '_' + random_str + '.jpg'
     cv2.imwrite(tmp_img_filename, image)
     upload_file(tmp_img_filename, FOLDER_ID)
     os.remove(tmp_img_filename)
