@@ -170,7 +170,7 @@ def count_stickers(image, user_id):
         results[quadrant_name] = circle_counts
     
     new_data = []
-    datetime_str = now.strftime("%Y%m%d %H%M%S")
+    datetime_str = now.strftime("%Y/%m/%d %H:%M:%S")
     for quadrant_name, circle_counts in results.items():
         for color, counts in circle_counts.items():
             new_data.append([datetime_str, user_id, quadrant_name, color, counts])
