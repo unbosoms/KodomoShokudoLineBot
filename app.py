@@ -90,15 +90,19 @@ def handle_image(event):
     message_id = event.message.id
     message_content = line_bot_api.get_message_content(message_id)
 
-    result = count_stickers(message_content.content, user_id)
+    master_shokudo, master_quadrant, master_color = get_master()
+    shokudo_name = master_shokudo[user_id]
+
+    result = count_stickers(message_content.content, user_id, master_quadrant, master_color)
+
 
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text='今日もお疲れ様でした♪\n集計結果はこちら！\n'+result)
+        TextSendMessage(text=shokudo_name+'さん今日もお疲れ様でした♪集計結果はこちら！\n'+result)
         )
 
 # 画像からシールの数をカウントする関数
-def count_stickers(image, user_id):
+def count_stickers(image, user_id, master_quadrant, master_color):
     img_bn = io.BytesIO(image)
     img_pil = Image.open(img_bn)
     image = np.asarray(img_pil)
@@ -119,26 +123,26 @@ def count_stickers(image, user_id):
 
     # 領域ごとに結果を保存する辞書
     results = {
-        "おしゃべり": {},
-        "ごはん": {},
-        "べんきょう": {},
-        "おあそび": {}
+        "quadrant1": {},
+        "quadrant2": {},
+        "quadrant3": {},
+        "quadrant4": {}
     }
 
     # 領域を4分割
     quadrants = {
-        "おしゃべり": image[0:height//2, 0:width//2],
-        "ごはん": image[0:height//2, width//2:width],
-        "べんきょう": image[height//2:height, 0:width//2],
-        "おあそび": image[height//2:height, width//2:width],
+        "quadrant1": image[0:height//2, 0:width//2],
+        "quadrant2": image[0:height//2, width//2:width],
+        "quadrant3": image[height//2:height, 0:width//2],
+        "quadrant4": image[height//2:height, width//2:width],
     }
 
     # 色範囲を設定 (HSV形式)
     color_ranges = {
-        "赤": [(0, 100, 100), (10, 255, 255)],      # 赤色
-        "緑": [(40, 50, 50), (80, 255, 255)],    # 緑色
-        "青": [(100, 150, 50), (120, 255, 255)],  # 青色
-        "黄": [(20, 100, 100), (30, 255, 255)], # 黄色
+        "red": [(0, 100, 100), (10, 255, 255)],      # 赤色
+        "green": [(40, 50, 50), (80, 255, 255)],    # 緑色
+        "blue": [(100, 150, 50), (120, 255, 255)],  # 青色
+        "yellow": [(20, 100, 100), (30, 255, 255)], # 黄色
     }
 
     # 各領域を処理
@@ -180,11 +184,11 @@ def count_stickers(image, user_id):
 
     result_str = ''
     for quadrant_name, counts in results.items():
-        count_sum = 0
+        result_str += f"\n<{master_quadrant[user_id][quadrant_name]}>\n"
         for color, count in counts.items():
-            count_sum += count
-        result_str += f"\n{quadrant_name}: {count_sum}\n"
-        result_str += f"{'●'*count_sum}\n"
+            count
+            result_str += f"{master_color[user_id][color]}({count}):"
+            result_str += f"{'●'*count}\n"
 
     return result_str
 
@@ -224,6 +228,49 @@ def add_to_gspread(data):
     client = gspread.authorize(creds)
     sheet = client.open_by_key(SPREADSHEET_ID).sheet1  # シート名を指定
     sheet.append_rows(data)
+
+def get_master():
+    # サービスアカウントキーのJSONファイル
+    SERVICE_ACCOUNT_FILE = "credentials.json"
+    # Google Spreadsheet APIのスコープ
+    SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+    # GoogleDrive認証
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES
+    )
+    # GoogleSpreadsheetAPIクライアントの作成
+    client = gspread.authorize(creds)
+
+    # master_shokudo
+    master_shokudo = {}
+    sheet = client.open_by_key(SPREADSHEET_ID).worksheet("master_shokudo")# シート名を指定
+    data = sheet.get_all_values()
+    for row in data[1:]:
+        master_shokudo[row[0]]=row[1]
+
+    # master_quadrant
+    master_quadrant = {}
+    sheet = client.open_by_key(SPREADSHEET_ID).worksheet("master_quadrant")# シート名を指定
+    data = sheet.get_all_values()
+    for row in data[1:]:
+        master_quadrant[row[0]] = {}
+        master_quadrant[row[0]]['quadrant1']=row[1]
+        master_quadrant[row[0]]['quadrant2']=row[2]
+        master_quadrant[row[0]]['quadrant3']=row[3]
+        master_quadrant[row[0]]['quadrant4']=row[4]
+
+    # master_color
+    master_color = {}
+    sheet = client.open_by_key(SPREADSHEET_ID).worksheet("master_color")# シート名を指定
+    data = sheet.get_all_values()
+    for row in data[1:]:
+        master_color[row[0]] = {}
+        master_color[row[0]]['red']=row[1]
+        master_color[row[0]]['blue']=row[2]
+        master_color[row[0]]['green']=row[3]
+        master_color[row[0]]['yellow']=row[4]
+    
+    return master_shokudo, master_quadrant, master_color
 
 # Flask app の起動
 if __name__ == "__main__":
