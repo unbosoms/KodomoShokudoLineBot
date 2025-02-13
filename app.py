@@ -31,15 +31,17 @@ import string
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
+import gspread
 
 # 環境変数の読み込み
 load_dotenv()
 CHANNEL_ACCESS_TOKEN=os.environ.get("CHANNEL_ACCESS_TOKEN")
 CHANNEL_SECRET=os.environ.get("CHANNEL_SECRET")
-FOLDER_ID=os.environ.get("FOLDER_ID")
 GOOGLE_CREDENTIALS=os.environ.get("GOOGLE_CREDENTIALS")
+FOLDER_ID=os.environ.get("FOLDER_ID")
+SPREADSHEET_ID=os.environ.get("SPREADSHEET_ID")
 
-# GOogle credentials.jsonを作成
+# GOOGLE_CREDENTIALSからcredentials.jsonを作成
 if GOOGLE_CREDENTIALS:
     with open("credentials.json", "wb") as f:
         f.write(base64.b64decode(GOOGLE_CREDENTIALS))
@@ -50,22 +52,6 @@ app = Flask(__name__)
 # Line BotのACCESS TOKENおよびSECRETのセット
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
-
-
-# サービスアカウントキーのJSONファイル
-SERVICE_ACCOUNT_FILE = "credentials.json"
-
-# Google Drive APIのスコープ
-SCOPES = ["https://www.googleapis.com/auth/drive.file"]
-
-# GoogleDrive認証
-creds = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
-
-# GoogleDriveAPIクライアントの作成
-service = build("drive", "v3", credentials=creds)
-
 
 # Flaskの動作確認用
 @app.route("/")
@@ -89,7 +75,6 @@ def callback():
 
     return 'OK'
 
-
 # テキストメッセージが来た時の対応
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -101,10 +86,11 @@ def handle_message(event):
 # 画像が送られてきた時の対応
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
+    user_id = event.source.user_id 
     message_id = event.message.id
     message_content = line_bot_api.get_message_content(message_id)
 
-    result = count_stickers(message_content.content)
+    result = count_stickers(message_content.content, user_id)
 
     line_bot_api.reply_message(
         event.reply_token,
@@ -112,7 +98,7 @@ def handle_image(event):
         )
 
 # 画像からシールの数をカウントする関数
-def count_stickers(image):
+def count_stickers(image, user_id):
     img_bn = io.BytesIO(image)
     img_pil = Image.open(img_bn)
     image = np.asarray(img_pil)
@@ -122,7 +108,7 @@ def count_stickers(image):
     now = datetime.datetime.now()
     time_str = now.strftime("%Y%m%d_%H%M%S")
     random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    tmp_img_filename = './' + time_str + '_' + random_str + '.jpg'
+    tmp_img_filename = './' + time_str + '_' + user_id + '_' + random_str + '.jpg'
     cv2.imwrite(tmp_img_filename, image)
     upload_file(tmp_img_filename, FOLDER_ID)
     os.remove(tmp_img_filename)
@@ -182,6 +168,13 @@ def count_stickers(image):
         
         # 結果を保存
         results[quadrant_name] = circle_counts
+    
+    new_data = []
+    for quadrant_name, circle_counts in results.items():
+        for color, counts in circle_counts.items():
+            new_data.append([user_id, quadrant_name, color, counts])
+    
+    add_to_gspread(new_data)
 
     result_str = ''
     for quadrant_name, counts in results.items():
@@ -194,6 +187,17 @@ def count_stickers(image):
     return result_str
 
 def upload_file(file_path, folder_id=None):
+    # サービスアカウントキーのJSONファイル
+    SERVICE_ACCOUNT_FILE = "credentials.json"
+    # Google Drive APIのスコープ
+    SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+    # GoogleDrive認証
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES
+    )
+    # GoogleDriveAPIクライアントの作成
+    service = build("drive", "v3", credentials=creds)
+
     """Google Drive にファイルをアップロード"""
     file_metadata = {"name": file_path.split("/")[-1]}
     
@@ -205,6 +209,19 @@ def upload_file(file_path, folder_id=None):
     
     return file.get("id")
 
+def add_to_gspread(data):
+    # サービスアカウントキーのJSONファイル
+    SERVICE_ACCOUNT_FILE = "credentials.json"
+    # Google Spreadsheet APIのスコープ
+    SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+    # GoogleDrive認証
+    creds = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=SCOPES
+    )
+    # GoogleSpreadsheetAPIクライアントの作成
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key(SPREADSHEET_ID).sheet1  # シート名を指定
+    sheet.append_rows(data)
 
 # Flask app の起動
 if __name__ == "__main__":
