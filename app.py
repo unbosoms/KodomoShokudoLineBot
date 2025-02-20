@@ -115,7 +115,7 @@ def count_stickers(image, user_id, master_quadrant, master_color):
     image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGR)
 
     # GoogleDriveに画像を保存する
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.UTC)
     now = now + datetime.timedelta(hours=9)
     time_str = now.strftime("%Y%m%d_%H%M%S")
     random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
