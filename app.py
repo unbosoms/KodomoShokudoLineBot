@@ -86,16 +86,20 @@ def handle_message(event):
 # 画像が送られてきた時の対応
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
+    
+    # 基礎情報の取得
     user_id = event.source.user_id 
     message_id = event.message.id
     message_content = line_bot_api.get_message_content(message_id)
 
+    # master dataの取得
     master_shokudo, master_quadrant, master_color = get_master()
     shokudo_name = master_shokudo[user_id]
 
+    # カウント結果の取得
     result = count_stickers(message_content.content, user_id, master_quadrant, master_color)
 
-
+    # 返信を送付
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=shokudo_name+'さん今日もお疲れ様でした♪集計結果はこちら！\n'+result)
@@ -103,12 +107,14 @@ def handle_image(event):
 
 # 画像からシールの数をカウントする関数
 def count_stickers(image, user_id, master_quadrant, master_color):
+
+    # 画像データの読み込み
     img_bn = io.BytesIO(image)
     img_pil = Image.open(img_bn)
     image = np.asarray(img_pil)
     image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGR)
 
-    # GoogleDrive保存用のファイルを一時的に保存 
+    # GoogleDriveに画像を保存する
     now = datetime.datetime.now()
     now = now + datetime.timedelta(hours=9)
     time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -178,7 +184,7 @@ def count_stickers(image, user_id, master_quadrant, master_color):
     datetime_str = now.strftime("%Y/%m/%d %H:%M:%S")
     for quadrant_name, circle_counts in results.items():
         for color, counts in circle_counts.items():
-            new_data.append([datetime_str, user_id, quadrant_name, color, counts])
+            new_data.append([datetime_str, user_id, master_quadrant[user_id][quadrant_name], master_color[user_id][color], counts])
     
     add_to_gspread(new_data)
 
@@ -266,8 +272,8 @@ def get_master():
     for row in data[1:]:
         master_color[row[0]] = {}
         master_color[row[0]]['red']=row[1]
-        master_color[row[0]]['blue']=row[2]
-        master_color[row[0]]['green']=row[3]
+        master_color[row[0]]['green']=row[2]
+        master_color[row[0]]['blue']=row[3]
         master_color[row[0]]['yellow']=row[4]
     
     return master_shokudo, master_quadrant, master_color
