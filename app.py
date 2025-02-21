@@ -197,10 +197,16 @@ def count_stickers(image, user_id, master_quadrant, master_color):
 
     result_str = ''
     for quadrant_name, counts in results.items():
-        result_str += f"\n<{master_quadrant[user_id][quadrant_name]}>\n"
+        if user_id in master_quadrant:
+            result_str += f"\n<{master_quadrant[user_id][quadrant_name]}>\n"
+        else:
+            result_str += f"\n<{quadrant_name}>\n"
         for color, count in counts.items():
             count
-            result_str += f"{master_color[user_id][color]}({count}):"
+            if user_id in master_quadrant:
+                result_str += f"{master_color[user_id][color]}({count}):"
+            else:
+                result_str += f"{color}({count}):"
             result_str += f"{'●'*count}\n"
 
     return result_str
