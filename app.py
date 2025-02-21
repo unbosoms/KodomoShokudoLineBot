@@ -94,7 +94,11 @@ def handle_image(event):
 
     # master dataの取得
     master_shokudo, master_quadrant, master_color = get_master()
-    shokudo_name = master_shokudo[user_id]
+    shokudo_name = ''
+    if user_id in master_shokudo:
+        shokudo_name = master_shokudo[user_id]
+    else:
+        shokudo_name = '未登録'
 
     # カウント結果の取得
     result = count_stickers(message_content.content, user_id, master_quadrant, master_color)
@@ -184,7 +188,10 @@ def count_stickers(image, user_id, master_quadrant, master_color):
     datetime_str = now.strftime("%Y/%m/%d %H:%M:%S")
     for quadrant_name, circle_counts in results.items():
         for color, counts in circle_counts.items():
-            new_data.append([datetime_str, user_id, master_quadrant[user_id][quadrant_name], master_color[user_id][color], counts])
+            if user_id in master_quadrant and user_id in master_color:
+                new_data.append([datetime_str, user_id, master_quadrant[user_id][quadrant_name], master_color[user_id][color], counts])
+            else:
+                new_data.append([datetime_str, user_id, quadrant_name,color, counts])
     
     add_to_gspread(new_data)
 
