@@ -133,26 +133,26 @@ def count_stickers(image, user_id, master_quadrant, master_color):
 
     # 領域ごとに結果を保存する辞書
     results = {
-        "quadrant1": {},
-        "quadrant2": {},
-        "quadrant3": {},
-        "quadrant4": {}
+        "左上": {},
+        "右上": {},
+        "左下": {},
+        "右下": {}
     }
 
     # 領域を4分割
     quadrants = {
-        "quadrant1": image[0:height//2, 0:width//2],
-        "quadrant2": image[0:height//2, width//2:width],
-        "quadrant3": image[height//2:height, 0:width//2],
-        "quadrant4": image[height//2:height, width//2:width],
+        "左上": image[0:height//2, 0:width//2],
+        "右上": image[0:height//2, width//2:width],
+        "左下": image[height//2:height, 0:width//2],
+        "右下": image[height//2:height, width//2:width],
     }
 
     # 色範囲を設定 (HSV形式)
     color_ranges = {
-        "red": [(0, 100, 100), (10, 255, 255)],      # 赤色
-        "green": [(40, 50, 50), (80, 255, 255)],    # 緑色
-        "blue": [(100, 150, 50), (120, 255, 255)],  # 青色
-        "yellow": [(20, 100, 100), (30, 255, 255)], # 黄色
+        "赤": [(0, 100, 100), (10, 255, 255)],      # 赤色
+        "緑": [(40, 50, 50), (80, 255, 255)],    # 緑色
+        "青": [(100, 150, 50), (120, 255, 255)],  # 青色
+        "黄": [(20, 100, 100), (30, 255, 255)], # 黄色
     }
 
     # 各領域を処理
@@ -198,13 +198,13 @@ def count_stickers(image, user_id, master_quadrant, master_color):
     result_str = ''
     for quadrant_name, counts in results.items():
         if user_id in master_quadrant:
-            result_str += f"\n<{master_quadrant[user_id][quadrant_name]}>\n"
+            result_str += f"\n<({quadrant_name}){master_quadrant[user_id][quadrant_name]}>\n"
         else:
             result_str += f"\n<{quadrant_name}>\n"
         for color, count in counts.items():
             count
             if user_id in master_quadrant:
-                result_str += f"{master_color[user_id][color]}({count}):"
+                result_str += f"({color}){master_color[user_id][color]}({count}):"
             else:
                 result_str += f"{color}({count}):"
             result_str += f"{'●'*count}\n"
@@ -273,10 +273,10 @@ def get_master():
     data = sheet.get_all_values()
     for row in data[1:]:
         master_quadrant[row[0]] = {}
-        master_quadrant[row[0]]['quadrant1']=row[1]
-        master_quadrant[row[0]]['quadrant2']=row[2]
-        master_quadrant[row[0]]['quadrant3']=row[3]
-        master_quadrant[row[0]]['quadrant4']=row[4]
+        master_quadrant[row[0]]['左上']=row[1]
+        master_quadrant[row[0]]['右上']=row[2]
+        master_quadrant[row[0]]['左下']=row[3]
+        master_quadrant[row[0]]['右下']=row[4]
 
     # master_color
     master_color = {}
@@ -284,10 +284,10 @@ def get_master():
     data = sheet.get_all_values()
     for row in data[1:]:
         master_color[row[0]] = {}
-        master_color[row[0]]['red']=row[1]
-        master_color[row[0]]['green']=row[2]
-        master_color[row[0]]['blue']=row[3]
-        master_color[row[0]]['yellow']=row[4]
+        master_color[row[0]]['赤']=row[1]
+        master_color[row[0]]['緑']=row[2]
+        master_color[row[0]]['青']=row[3]
+        master_color[row[0]]['黄']=row[4]
     
     return master_shokudo, master_quadrant, master_color
 
